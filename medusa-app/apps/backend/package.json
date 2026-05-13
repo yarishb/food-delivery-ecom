@@ -1,7 +1,7 @@
 {
-  "name": "@dtc/backend",
+  "name": "@green-balance/backend",
   "version": "0.0.1",
-  "description": "A starter for Medusa projects.",
+  "description": "Green Balance - Food Delivery Management System Backend",
   "author": "Medusa (https://medusajs.com)",
   "license": "MIT",
   "keywords": [

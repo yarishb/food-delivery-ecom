@@ -1,5 +1,5 @@
 {
-  "name": "medusa-app",
+  "name": "green-balance",
   "private": false,
   "packageManager": "npm@11.12.1",
   "engines": {
@@ -11,9 +11,10 @@
     "start": "turbo start",
     "lint": "turbo lint",
     "test": "turbo test",
-    "backend:seed": "turbo seed --filter=@dtc/backend",
-    "backend:dev": "turbo dev --filter=@dtc/backend",
-    "storefront:dev": "turbo dev --filter=@dtc/storefront"
+    "backend:seed": "turbo seed --filter=@green-balance/backend",
+    "backend:dev": "turbo dev --filter=@green-balance/backend",
+    "storefront:dev": "turbo dev --filter=@green-balance/storefront",
+    "dev:all": "turbo dev --filter=@green-balance/backend --filter=@green-balance/storefront"
   },
   "pnpm": {
     "overrides": {
