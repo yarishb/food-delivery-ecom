@@ -8,16 +8,15 @@
   </a>
 </p>
 <h1 align="center">
-  Medusa DTC Starter
+  Green Balance
 </h1>
 
 <h4 align="center">
-  <a href="https://docs.medusajs.com">Documentation</a> |
-  <a href="https://www.medusajs.com">Website</a>
+  AI-Powered Food Delivery Management System
 </h4>
 
 <p align="center">
-  Building blocks for digital commerce
+  Intelligent management for healthy food delivery services
 </p>
 <p align="center">
   <a href="https://github.com/medusajs/medusa/blob/develop/LICENSE">
@@ -38,9 +37,9 @@
   </a>
 </p>
 
-# Medusa DTC Starter
+# Green Balance
 
-A production-ready monorepo starter for direct-to-consumer ecommerce stores powered by Medusa and Next.js. Includes a fully featured storefront with product browsing, cart, checkout, customer accounts, and order management.
+An AI-powered food delivery management system with Medusa v2 backend, Next.js storefront, and NestJS RAG service. Enables restaurant managers to interact with the platform using natural language commands for dish management, order tracking, and business analytics.
 
 ## Features
 

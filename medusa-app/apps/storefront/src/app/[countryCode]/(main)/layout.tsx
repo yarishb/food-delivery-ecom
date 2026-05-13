@@ -20,13 +20,13 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
 
   if (cart) {
     const { shipping_options } = await listCartOptions()
-
     shippingOptions = shipping_options
   }
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
       <Nav />
+
       {customer && cart && (
         <CartMismatchBanner customer={customer} cart={cart} />
       )}
@@ -38,8 +38,10 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
           shippingOptions={shippingOptions}
         />
       )}
-      {props.children}
+
+      <main className="flex-1 flex flex-col">{props.children}</main>
+
       <Footer />
-    </>
+    </div>
   )
 }

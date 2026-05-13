@@ -34,7 +34,7 @@ export default async function initial_data_seed({
     ModuleRegistrationName.FULFILLMENT
   );
 
-  const countries = ["gb", "de", "dk", "se", "fr", "es", "it"];
+  const countries = ["gb", "ua"];
 
   logger.info("Seeding store data...");
   const {
@@ -43,8 +43,8 @@ export default async function initial_data_seed({
     input: {
       salesChannelsData: [
         {
-          name: "Default Sales Channel",
-          description: "Created by Medusa",
+          name: "Green Balance Main Channel",
+          description: "Green Balance Primary Sales Channel",
         },
       ],
     },
@@ -56,7 +56,7 @@ export default async function initial_data_seed({
     input: {
       api_keys: [
         {
-          title: "Default Publishable API Key",
+          title: "Green Balance Publishable API Key",
           type: "publishable",
           created_by: "",
         },
@@ -77,7 +77,7 @@ export default async function initial_data_seed({
     input: {
       stores: [
         {
-          name: "Default Store",
+          name: "Green Balance Store",
           supported_currencies: [
             {
               currency_code: "eur",
@@ -167,29 +167,9 @@ export default async function initial_data_seed({
             type: "country",
           },
           {
-            country_code: "de",
+            country_code: "ua",
             type: "country",
-          },
-          {
-            country_code: "dk",
-            type: "country",
-          },
-          {
-            country_code: "se",
-            type: "country",
-          },
-          {
-            country_code: "fr",
-            type: "country",
-          },
-          {
-            country_code: "es",
-            type: "country",
-          },
-          {
-            country_code: "it",
-            type: "country",
-          },
+          }
         ],
       },
     ],
@@ -302,19 +282,19 @@ export default async function initial_data_seed({
     input: {
       product_categories: [
         {
-          name: "Shirts",
+          name: "Salads",
           is_active: true,
         },
         {
-          name: "Sweatshirts",
+          name: "Bowls",
           is_active: true,
         },
         {
-          name: "Pants",
+          name: "Wraps",
           is_active: true,
         },
         {
-          name: "Merch",
+          name: "Beverages",
           is_active: true,
         },
       ],
@@ -325,13 +305,13 @@ export default async function initial_data_seed({
     input: {
       products: [
         {
-          title: "Medusa T-Shirt",
+          title: "Green Salad Bowl",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Shirts")!.id,
+            categoryResult.find((cat) => cat.name === "Salads")!.id,
           ],
           description:
-            "Reimagine the feeling of a classic T-shirt. With our cotton T-shirts, everyday essentials no longer have to be ordinary.",
-          handle: "t-shirt",
+            "Fresh and nutritious salad bowl packed with organic vegetables, proteins, and our signature Green Balance dressing. Perfect for a healthy meal.",
+          handle: "green-salad-bowl",
           weight: 400,
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
@@ -512,13 +492,13 @@ export default async function initial_data_seed({
           ],
         },
         {
-          title: "Medusa Sweatshirt",
+          title: "Buddha Power Bowl",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Sweatshirts")!.id,
+            categoryResult.find((cat) => cat.name === "Bowls")!.id,
           ],
           description:
-            "Reimagine the feeling of a classic sweatshirt. With our cotton sweatshirt, everyday essentials no longer have to be ordinary.",
-          handle: "sweatshirt",
+            "A complete meal in a bowl with quinoa, roasted vegetables, chickpeas, and tahini dressing. High in protein and fiber for sustained energy.",
+          handle: "buddha-power-bowl",
           weight: 400,
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
@@ -539,7 +519,7 @@ export default async function initial_data_seed({
           variants: [
             {
               title: "S",
-              sku: "SWEATSHIRT-S",
+              sku: "BOWL-S",
               options: {
                 Size: "S",
               },
@@ -556,7 +536,7 @@ export default async function initial_data_seed({
             },
             {
               title: "M",
-              sku: "SWEATSHIRT-M",
+              sku: "BOWL-M",
               options: {
                 Size: "M",
               },
@@ -573,7 +553,7 @@ export default async function initial_data_seed({
             },
             {
               title: "L",
-              sku: "SWEATSHIRT-L",
+              sku: "BOWL-L",
               options: {
                 Size: "L",
               },
@@ -590,7 +570,7 @@ export default async function initial_data_seed({
             },
             {
               title: "XL",
-              sku: "SWEATSHIRT-XL",
+              sku: "BOWL-XL",
               options: {
                 Size: "XL",
               },
@@ -613,13 +593,13 @@ export default async function initial_data_seed({
           ],
         },
         {
-          title: "Medusa Sweatpants",
+          title: "Mediterranean Wrap",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Pants")!.id,
+            categoryResult.find((cat) => cat.name === "Wraps")!.id,
           ],
           description:
-            "Reimagine the feeling of classic sweatpants. With our cotton sweatpants, everyday essentials no longer have to be ordinary.",
-          handle: "sweatpants",
+            "Whole wheat wrap filled with hummus, feta cheese, tomatoes, cucumbers, and fresh herbs. A light and satisfying meal option.",
+          handle: "mediterranean-wrap",
           weight: 400,
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
@@ -640,7 +620,7 @@ export default async function initial_data_seed({
           variants: [
             {
               title: "S",
-              sku: "SWEATPANTS-S",
+              sku: "WRAP-S",
               options: {
                 Size: "S",
               },
@@ -657,7 +637,7 @@ export default async function initial_data_seed({
             },
             {
               title: "M",
-              sku: "SWEATPANTS-M",
+              sku: "WRAP-M",
               options: {
                 Size: "M",
               },
@@ -674,7 +654,7 @@ export default async function initial_data_seed({
             },
             {
               title: "L",
-              sku: "SWEATPANTS-L",
+              sku: "WRAP-L",
               options: {
                 Size: "L",
               },
@@ -691,7 +671,7 @@ export default async function initial_data_seed({
             },
             {
               title: "XL",
-              sku: "SWEATPANTS-XL",
+              sku: "WRAP-XL",
               options: {
                 Size: "XL",
               },
@@ -714,13 +694,13 @@ export default async function initial_data_seed({
           ],
         },
         {
-          title: "Medusa Shorts",
+          title: "Green Balance Smoothie",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Merch")!.id,
+            categoryResult.find((cat) => cat.name === "Beverages")!.id,
           ],
           description:
-            "Reimagine the feeling of classic shorts. With our cotton shorts, everyday essentials no longer have to be ordinary.",
-          handle: "shorts",
+            "Refreshing blend of spinach, banana, mango, and almond milk. Rich in vitamins and minerals. Dairy-free and vegan.",
+          handle: "green-balance-smoothie",
           weight: 400,
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
@@ -740,8 +720,8 @@ export default async function initial_data_seed({
           ],
           variants: [
             {
-              title: "S",
-              sku: "SHORTS-S",
+              title: "Small",
+              sku: "SMOOTHIE-SMALL",
               options: {
                 Size: "S",
               },
@@ -757,8 +737,8 @@ export default async function initial_data_seed({
               ],
             },
             {
-              title: "M",
-              sku: "SHORTS-M",
+              title: "Medium",
+              sku: "SMOOTHIE-MEDIUM",
               options: {
                 Size: "M",
               },
@@ -774,8 +754,8 @@ export default async function initial_data_seed({
               ],
             },
             {
-              title: "L",
-              sku: "SHORTS-L",
+              title: "Large",
+              sku: "SMOOTHIE-LARGE",
               options: {
                 Size: "L",
               },
@@ -791,8 +771,8 @@ export default async function initial_data_seed({
               ],
             },
             {
-              title: "XL",
-              sku: "SHORTS-XL",
+              title: "Extra Large",
+              sku: "SMOOTHIE-XLARGE",
               options: {
                 Size: "XL",
               },
