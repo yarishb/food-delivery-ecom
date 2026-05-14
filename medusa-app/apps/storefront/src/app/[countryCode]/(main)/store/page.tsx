@@ -4,8 +4,8 @@ import { SortOptions } from "@modules/store/components/refinement-list/sort-prod
 import StoreTemplate from "@modules/store/templates"
 
 export const metadata: Metadata = {
-  title: "Menu",
-  description: "Explore our healthy food dishes and beverages.",
+  title: "Меню",
+  description: "Ознайомтесь з нашими стравами та напоями.",
 }
 
 type Params = {
