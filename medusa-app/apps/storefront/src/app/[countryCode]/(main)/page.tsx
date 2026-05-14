@@ -6,9 +6,9 @@ import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 
 export const metadata: Metadata = {
-  title: "Green Balance - Healthy Food Delivery",
+  title: "Green Balance - Доставка здорової їжі",
   description:
-    "Order healthy, nutritious food delivered to your door.",
+    "Замовляйте здорову, поживну їжу з доставкою до дверей.",
 }
 
 export default async function Home(props: {

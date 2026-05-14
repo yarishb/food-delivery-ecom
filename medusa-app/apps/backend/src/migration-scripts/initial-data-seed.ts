@@ -7,14 +7,12 @@ import {
 } from "@medusajs/framework/utils";
 import {
   createApiKeysWorkflow,
-  createCollectionsWorkflow,
   createInventoryLevelsWorkflow,
   createProductCategoriesWorkflow,
   createProductsWorkflow,
   createRegionsWorkflow,
   createSalesChannelsWorkflow,
   createShippingOptionsWorkflow,
-  createShippingProfilesWorkflow,
   createStockLocationsWorkflow,
   createStoresWorkflow,
   createTaxRegionsWorkflow,
@@ -31,20 +29,21 @@ export default async function initial_data_seed({
   const link = container.resolve(ContainerRegistrationKeys.LINK);
   const query = container.resolve(ContainerRegistrationKeys.QUERY);
   const fulfillmentModuleService = container.resolve(
-    ModuleRegistrationName.FULFILLMENT
+    ModuleRegistrationName.FULFILLMENT,
   );
 
-  const countries = ["gb", "ua"];
+  // Тільки Україна
+  const countries = ["ua"];
 
-  logger.info("Seeding store data...");
+  logger.info("Налаштування магазину...");
   const {
     result: [defaultSalesChannel],
   } = await createSalesChannelsWorkflow(container).run({
     input: {
       salesChannelsData: [
         {
-          name: "Green Balance Main Channel",
-          description: "Green Balance Primary Sales Channel",
+          name: "Основний канал продажів",
+          description: "Головний канал для сайту доставки",
         },
       ],
     },
@@ -56,7 +55,7 @@ export default async function initial_data_seed({
     input: {
       api_keys: [
         {
-          title: "Green Balance Publishable API Key",
+          title: "Public API Key",
           type: "publishable",
           created_by: "",
         },
@@ -77,15 +76,11 @@ export default async function initial_data_seed({
     input: {
       stores: [
         {
-          name: "Green Balance Store",
+          name: "Green Balance",
           supported_currencies: [
             {
-              currency_code: "eur",
+              currency_code: "uah",
               is_default: true,
-            },
-            {
-              currency_code: "usd",
-              is_default: false,
             },
           ],
           default_sales_channel_id: defaultSalesChannel.id,
@@ -94,13 +89,13 @@ export default async function initial_data_seed({
     },
   });
 
-  logger.info("Seeding region data...");
+  logger.info("Налаштування регіону...");
   const { result: regionResult } = await createRegionsWorkflow(container).run({
     input: {
       regions: [
         {
-          name: "Europe",
-          currency_code: "eur",
+          name: "Україна",
+          currency_code: "uah",
           countries,
           payment_providers: ["pp_system_default"],
         },
@@ -108,29 +103,27 @@ export default async function initial_data_seed({
     },
   });
   const region = regionResult[0];
-  logger.info("Finished seeding regions.");
 
-  logger.info("Seeding tax regions...");
+  logger.info("Налаштування податків...");
   await createTaxRegionsWorkflow(container).run({
     input: countries.map((country_code) => ({
       country_code,
       provider_id: "tp_system",
     })),
   });
-  logger.info("Finished seeding tax regions.");
 
-  logger.info("Seeding stock location data...");
+  logger.info("Налаштування складу...");
   const { result: stockLocationResult } = await createStockLocationsWorkflow(
-    container
+    container,
   ).run({
     input: {
       locations: [
         {
-          name: "European Warehouse",
+          name: "Головна кухня",
           address: {
-            city: "Copenhagen",
-            country_code: "DK",
-            address_1: "",
+            city: "Львів",
+            country_code: "UA",
+            address_1: "вул. Центральна, 1",
           },
         },
       ],
@@ -147,8 +140,7 @@ export default async function initial_data_seed({
     },
   });
 
-  logger.info("Seeding fulfillment data...");
-  // This is created by a migration script in core.
+  logger.info("Налаштування логістики...");
   const { data: shippingProfileResult } = await query.graph({
     entity: "shipping_profile",
     fields: ["id"],
@@ -156,20 +148,16 @@ export default async function initial_data_seed({
   const shippingProfile = shippingProfileResult[0];
 
   const fulfillmentSet = await fulfillmentModuleService.createFulfillmentSets({
-    name: "European Warehouse delivery",
+    name: "Кур'єрська доставка",
     type: "shipping",
     service_zones: [
       {
-        name: "Europe",
+        name: "Україна",
         geo_zones: [
-          {
-            country_code: "gb",
-            type: "country",
-          },
           {
             country_code: "ua",
             type: "country",
-          }
+          },
         ],
       },
     ],
@@ -187,66 +175,24 @@ export default async function initial_data_seed({
   await createShippingOptionsWorkflow(container).run({
     input: [
       {
-        name: "Standard Shipping",
+        name: "Доставка кур'єром",
         price_type: "flat",
         provider_id: "manual_manual",
         service_zone_id: fulfillmentSet.service_zones[0].id,
         shipping_profile_id: shippingProfile.id,
         type: {
           label: "Standard",
-          description: "Ship in 2-3 days.",
-          code: "standard",
+          description: "Доставка до дверей у вказаний час",
+          code: "courier",
         },
         prices: [
           {
-            currency_code: "usd",
-            amount: 10,
-          },
-          {
-            currency_code: "eur",
-            amount: 10,
+            currency_code: "uah",
+            amount: 8000, // 80 грн
           },
           {
             region_id: region.id,
-            amount: 10,
-          },
-        ],
-        rules: [
-          {
-            attribute: "enabled_in_store",
-            value: "true",
-            operator: "eq",
-          },
-          {
-            attribute: "is_return",
-            value: "false",
-            operator: "eq",
-          },
-        ],
-      },
-      {
-        name: "Express Shipping",
-        price_type: "flat",
-        provider_id: "manual_manual",
-        service_zone_id: fulfillmentSet.service_zones[0].id,
-        shipping_profile_id: shippingProfile.id,
-        type: {
-          label: "Express",
-          description: "Ship in 24 hours.",
-          code: "express",
-        },
-        prices: [
-          {
-            currency_code: "usd",
-            amount: 10,
-          },
-          {
-            currency_code: "eur",
-            amount: 10,
-          },
-          {
-            region_id: region.id,
-            amount: 10,
+            amount: 8000,
           },
         ],
         rules: [
@@ -264,7 +210,6 @@ export default async function initial_data_seed({
       },
     ],
   });
-  logger.info("Finished seeding fulfillment data.");
 
   await linkSalesChannelsToStockLocationWorkflow(container).run({
     input: {
@@ -272,31 +217,17 @@ export default async function initial_data_seed({
       add: [defaultSalesChannel.id],
     },
   });
-  logger.info("Finished seeding stock location data.");
 
-  logger.info("Seeding product data...");
+  logger.info("Додавання товарів...");
 
   const { result: categoryResult } = await createProductCategoriesWorkflow(
-    container
+    container,
   ).run({
     input: {
       product_categories: [
-        {
-          name: "Salads",
-          is_active: true,
-        },
-        {
-          name: "Bowls",
-          is_active: true,
-        },
-        {
-          name: "Wraps",
-          is_active: true,
-        },
-        {
-          name: "Beverages",
-          is_active: true,
-        },
+        { name: "Раціони", is_active: true },
+        { name: "Боули", is_active: true },
+        { name: "Напої", is_active: true },
       ],
     },
   });
@@ -305,502 +236,109 @@ export default async function initial_data_seed({
     input: {
       products: [
         {
-          title: "Green Salad Bowl",
+          title: "Лососевий боул з кіноа",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Salads")!.id,
+            categoryResult.find((cat) => cat.name === "Боули")!.id,
           ],
           description:
-            "Fresh and nutritious salad bowl packed with organic vegetables, proteins, and our signature Green Balance dressing. Perfect for a healthy meal.",
-          handle: "green-salad-bowl",
-          weight: 400,
+            "Свіжий лосось, кіноа, авокадо, едамаме та фірмовий кунжутний соус. Здоровий обід з високим вмістом Омега-3.",
+          handle: "salmon-quinoa-bowl",
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
-          images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-back.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-white-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-white-back.png",
-            },
-          ],
+          metadata: {
+            ingredients: [
+              "лосось слабосолоний",
+              "кіноа",
+              "авокадо",
+              "боби едамаме",
+              "огірок",
+              "соус",
+            ],
+            allergens: ["риба", "кунжут", "соя"],
+          },
           options: [
             {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
-            },
-            {
-              title: "Color",
-              values: ["Black", "White"],
+              title: "Розмір порції",
+              values: ["Стандарт (350г)", "Максі (500г)"],
             },
           ],
           variants: [
             {
-              title: "S / Black",
-              sku: "SHIRT-S-BLACK",
+              title: "Стандартна порція",
+              sku: "BOWL-SALMON-STD",
               options: {
-                Size: "S",
-                Color: "Black",
+                "Розмір порції": "Стандарт (350г)",
               },
+              metadata: { calories: 420, protein: 28, fat: 18, carbs: 35 },
               prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
+                { amount: 35000, currency_code: "uah" }, // 350 грн
               ],
             },
             {
-              title: "S / White",
-              sku: "SHIRT-S-WHITE",
+              title: "Максі порція",
+              sku: "BOWL-SALMON-MAX",
               options: {
-                Size: "S",
-                Color: "White",
+                "Розмір порції": "Максі (500г)",
               },
+              metadata: { calories: 600, protein: 40, fat: 25, carbs: 50 },
               prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M / Black",
-              sku: "SHIRT-M-BLACK",
-              options: {
-                Size: "M",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M / White",
-              sku: "SHIRT-M-WHITE",
-              options: {
-                Size: "M",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L / Black",
-              sku: "SHIRT-L-BLACK",
-              options: {
-                Size: "L",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L / White",
-              sku: "SHIRT-L-WHITE",
-              options: {
-                Size: "L",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL / Black",
-              sku: "SHIRT-XL-BLACK",
-              options: {
-                Size: "XL",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL / White",
-              sku: "SHIRT-XL-WHITE",
-              options: {
-                Size: "XL",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
+                { amount: 48000, currency_code: "uah" }, // 480 грн
               ],
             },
           ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel.id,
-            },
-          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
         },
         {
-          title: "Buddha Power Bowl",
+          title: "Денний раціон «Баланс»",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Bowls")!.id,
+            categoryResult.find((cat) => cat.name === "Раціони")!.id,
           ],
           description:
-            "A complete meal in a bowl with quinoa, roasted vegetables, chickpeas, and tahini dressing. High in protein and fiber for sustained energy.",
-          handle: "buddha-power-bowl",
-          weight: 400,
+            "Повноцінне меню на весь день: сніданок, обід, вечеря та 2 перекуси. Ідеально для підтримки форми.",
+          handle: "daily-ration-balance",
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
-          images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-back.png",
-            },
-          ],
+          metadata: {
+            meals_included: 5,
+            diet_type: "Збалансоване харчування",
+          },
           options: [
             {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
+              title: "Калорійність",
+              values: ["1500 ккал", "2000 ккал"],
             },
           ],
           variants: [
             {
-              title: "S",
-              sku: "BOWL-S",
+              title: "1500 ккал",
+              sku: "RATION-BAL-1500",
               options: {
-                Size: "S",
+                Калорійність: "1500 ккал",
               },
+              metadata: { protein: 100, fat: 50, carbs: 150 },
               prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
+                { amount: 120000, currency_code: "uah" }, // 1200 грн
               ],
             },
             {
-              title: "M",
-              sku: "BOWL-M",
+              title: "2000 ккал",
+              sku: "RATION-BAL-2000",
               options: {
-                Size: "M",
+                Калорійність: "2000 ккал",
               },
+              metadata: { protein: 130, fat: 70, carbs: 200 },
               prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L",
-              sku: "BOWL-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "BOWL-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
+                { amount: 140000, currency_code: "uah" }, // 1400 грн
               ],
             },
           ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel.id,
-            },
-          ],
-        },
-        {
-          title: "Mediterranean Wrap",
-          category_ids: [
-            categoryResult.find((cat) => cat.name === "Wraps")!.id,
-          ],
-          description:
-            "Whole wheat wrap filled with hummus, feta cheese, tomatoes, cucumbers, and fresh herbs. A light and satisfying meal option.",
-          handle: "mediterranean-wrap",
-          weight: 400,
-          status: ProductStatus.PUBLISHED,
-          shipping_profile_id: shippingProfile.id,
-          images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-back.png",
-            },
-          ],
-          options: [
-            {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
-            },
-          ],
-          variants: [
-            {
-              title: "S",
-              sku: "WRAP-S",
-              options: {
-                Size: "S",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M",
-              sku: "WRAP-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L",
-              sku: "WRAP-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "WRAP-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-          ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel.id,
-            },
-          ],
-        },
-        {
-          title: "Green Balance Smoothie",
-          category_ids: [
-            categoryResult.find((cat) => cat.name === "Beverages")!.id,
-          ],
-          description:
-            "Refreshing blend of spinach, banana, mango, and almond milk. Rich in vitamins and minerals. Dairy-free and vegan.",
-          handle: "green-balance-smoothie",
-          weight: 400,
-          status: ProductStatus.PUBLISHED,
-          shipping_profile_id: shippingProfile.id,
-          images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/shorts-vintage-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/shorts-vintage-back.png",
-            },
-          ],
-          options: [
-            {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
-            },
-          ],
-          variants: [
-            {
-              title: "Small",
-              sku: "SMOOTHIE-SMALL",
-              options: {
-                Size: "S",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "Medium",
-              sku: "SMOOTHIE-MEDIUM",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "Large",
-              sku: "SMOOTHIE-LARGE",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "Extra Large",
-              sku: "SMOOTHIE-XLARGE",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-          ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel.id,
-            },
-          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
         },
       ],
     },
   });
-  logger.info("Finished seeding product data.");
 
-  logger.info("Seeding inventory levels.");
-
+  logger.info("Оновлення залишків на складі...");
   const { data: inventoryItems } = await query.graph({
     entity: "inventory_item",
     fields: ["id"],
@@ -810,11 +348,11 @@ export default async function initial_data_seed({
     input: {
       inventory_levels: inventoryItems.map((item) => ({
         location_id: stockLocation.id,
-        stocked_quantity: 1000000,
+        stocked_quantity: 50,
         inventory_item_id: item.id,
       })),
     },
   });
 
-  logger.info("Finished seeding inventory levels data.");
+  logger.info("Готово! Дані успішно завантажено.");
 }
