@@ -2,27 +2,9 @@
 
 import React, { useState, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useRouter, useParams } from "next/navigation"
 
-export default function WeeklyPlanClient({
-  initialCategories,
-  allProducts,
-}: any) {
-  // Вибираємо початкову категорію (наприклад, "Balance")
-  const [activeCategoryHandle, setActiveCategoryHandle] = useState("balance")
-
-  // Фільтруємо продукти для обраної категорії
-  const filteredProducts = useMemo(() => {
-    return allProducts
-      .filter((product: any) =>
-        product.categories?.some(
-          (cat: any) => cat.handle === activeCategoryHandle
-        )
-      )
-      .sort(
-        (a: any, b: any) => (a.metadata?.order || 0) - (b.metadata?.order || 0)
-      )
-  }, [activeCategoryHandle, allProducts])
-
+export default function WeeklyPlanClient({ allProducts }: any) {
   return (
     <section className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-6">
@@ -34,36 +16,13 @@ export default function WeeklyPlanClient({
             Доставка раціонів у Львові та Самборі.
           </p>
         </div>
-
-        {/* Динамічні таби на основі категорій з Medusa */}
-        <div className="flex justify-center mb-12">
-          <div className="inline-flex p-2 bg-[#FAF9F6] rounded-[2rem] border border-gray-100">
-            {initialCategories.map((cat: any) => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategoryHandle(cat.handle)}
-                className={`px-8 py-3 rounded-full text-sm font-bold transition-all ${
-                  activeCategoryHandle === cat.handle
-                    ? "bg-[#1A2E20] text-white shadow-lg"
-                    : "text-gray-400 hover:text-[#1A2E20]"
-                }`}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Список продуктів обраної категорії */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <AnimatePresence mode="wait">
-            {filteredProducts.map((product: any) => (
+            {allProducts.map((product: any) => (
               <PlanCard
                 key={product.id}
                 product={product}
-                // Витягуємо ціну з першого варіанту
                 price={product.variants?.[0]?.calculated_price}
-                // Дані з метаданих, які ми прописували
                 metadata={product.variants?.[0]?.metadata || {}}
               />
             ))}
@@ -73,12 +32,17 @@ export default function WeeklyPlanClient({
     </section>
   )
 }
-// Оновлений компонент PlanCard всередині WeeklyPlanClient.tsx
 
 function PlanCard({ product, price, metadata }: any) {
-  // Витягуємо числове значення з об'єкта ціни
-  // В Medusa v2 це зазвичай price.calculated_amount
   const amount = price?.calculated_amount || "—"
+  const router = useRouter()
+  const params = useParams()
+  const countryCode = params.countryCode as string
+
+  const handleSelectPlan = () => {
+    const productHandle = product.handle || product.id
+    router.push(`/${countryCode}/products/${productHandle}`)
+  }
 
   return (
     <motion.div
@@ -92,7 +56,6 @@ function PlanCard({ product, price, metadata }: any) {
       </h3>
 
       <div className="flex items-baseline gap-1 mb-6">
-        {/* ВИПРАВЛЕННЯ: Тепер ми рендеримо число amount, а не весь об'єкт price */}
         <span className="text-4xl font-black text-[#1A2E20]">{amount}</span>
         <span className="text-gray-400 font-bold uppercase text-xs">грн</span>
       </div>
@@ -106,7 +69,10 @@ function PlanCard({ product, price, metadata }: any) {
         </p>
       </div>
 
-      <button className="w-full py-4 rounded-2xl bg-white border border-gray-200 text-[#1A2E20] font-bold hover:bg-[#2B7A3E] hover:text-white hover:border-[#2B7A3E] transition-all">
+      <button
+        onClick={handleSelectPlan}
+        className="w-full py-4 rounded-2xl bg-white border border-gray-200 text-[#1A2E20] font-bold hover:bg-[#2B7A3E] hover:text-white hover:border-[#2B7A3E] transition-all"
+      >
         Обрати план
       </button>
     </motion.div>

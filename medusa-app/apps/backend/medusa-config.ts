@@ -1,4 +1,5 @@
 import { loadEnv, defineConfig, Modules } from "@medusajs/framework/utils";
+import { RATION_PLAN_MODULE } from "./src/modules/ration-plan";
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd());
 
@@ -15,8 +16,8 @@ module.exports = defineConfig({
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
     },
   },
-  modules: [
-    {
+  modules: {
+    [Modules.FILE]: {
       resolve: "@medusajs/medusa/file",
       options: {
         providers: [
@@ -39,5 +40,8 @@ module.exports = defineConfig({
         ],
       },
     },
-  ],
+    [RATION_PLAN_MODULE]: {
+      resolve: "./src/modules/ration-plan",
+    },
+  },
 });

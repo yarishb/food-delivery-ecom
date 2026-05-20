@@ -7,6 +7,7 @@ import ProductTabs from "@modules/products/components/product-tabs"
 import RelatedProducts from "@modules/products/components/related-products"
 import ProductInfo from "@modules/products/templates/product-info"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
+import RationPlanMenu from "@modules/products/components/ration-plan-menu"
 import { notFound } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
 
@@ -17,6 +18,7 @@ type ProductTemplateProps = {
   region: HttpTypes.StoreRegion
   countryCode: string
   images: HttpTypes.StoreProductImage[]
+  selectedVariantId?: string
 }
 
 const ProductTemplate: React.FC<ProductTemplateProps> = ({
@@ -24,10 +26,15 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   region,
   countryCode,
   images,
+  selectedVariantId,
 }) => {
   if (!product || !product.id) {
     return notFound()
   }
+
+  const isRationPlan = product.handle?.startsWith("ration-")
+  const activeVariantId =
+    selectedVariantId ?? product.variants?.[0]?.id
 
   return (
     <>
@@ -57,6 +64,11 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           </Suspense>
         </div>
       </div>
+      {isRationPlan && activeVariantId && (
+        <Suspense fallback={null}>
+          <RationPlanMenu variantId={activeVariantId} />
+        </Suspense>
+      )}
       <div
         className="content-container my-16 small:my-32"
         data-testid="related-products-container"
