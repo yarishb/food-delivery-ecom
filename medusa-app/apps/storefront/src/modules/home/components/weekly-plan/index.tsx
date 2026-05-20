@@ -13,6 +13,7 @@ export default async function WeeklyPlan() {
     countryCode: "ua",
     queryParams: {
       fields: "*categories,*variants.calculated_price,+metadata",
+      handle: ["ration-weight-loss", "ration-balance", "ration-muscle-gain"],
       limit: 100,
     },
   })
