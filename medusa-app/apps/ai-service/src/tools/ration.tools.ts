@@ -1,26 +1,40 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { MedusaService } from '../medusa/medusa.service';
+import { SupabaseService } from '../supabase/supabase.service';
+import { EmbeddingService } from '../embedding/embedding.service';
 
-export const createRationTools = (medusaService: MedusaService) => {
+export const createRationTools = (
+  supabaseService: SupabaseService,
+  embeddingService: EmbeddingService,
+  medusaService: MedusaService,
+) => {
   const searchMenuTool = tool(
     async ({ query, maxCalories, minCalories }) => {
       try {
-        console.log(`Searching for dishes with query: ${query}`);
+        console.log(`[RAG] Семантичний пошук страв за запитом: "${query}"`);
+
+        // 1. Отримуємо актуальний каталог страв із Медузи
         const products = await medusaService.getProducts();
-        console.log(`Found  "${products}"`);
 
-        const keywords = query.toLowerCase().split(/\s+/).filter(Boolean);
+        // 2. Генеруємо вектор для текстового запиту користувача через локальний Ollama (nomic-embed-text)
+        const queryVector = await embeddingService.getEmbedding768(query);
 
-        const matched = products.filter((p: any) => {
-          const haystack = [p.title, p.description, p.subtitle]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
-          return keywords.some((kw) => haystack.includes(kw));
-        });
+        // 3. Звертаємось до Supabase RPC (match_documents) для пошуку релевантних ID продуктів
+        const matchedProductIds =
+          await supabaseService.searchProductIdsSemantic(queryVector, 10);
 
-        console.log(`Found  "${products}"`);
+        console.log(
+          `[RAG] Знайдено релевантних ID у векторній БД:`,
+          matchedProductIds,
+        );
+
+        // 4. Складаємо список страв, зберігаючи точний порядок релевантності від векторного пошуку
+        const matched = matchedProductIds
+          .map((id) => products.find((p: any) => p.id === id))
+          .filter(Boolean); // видаляємо undefined, якщо якийсь продукт видалили з каталогу, але не з векторів
+
+        // 5. Форматуємо дані та застосовуємо додаткові жорсткі фільтри (калорії)
         const results = matched
           .map((p: any) => {
             const calorieMatch = p.subtitle?.match(/(\d+)\s*ккал/i);
@@ -49,7 +63,7 @@ export const createRationTools = (medusaService: MedusaService) => {
         if (!results.length) {
           return JSON.stringify({
             message:
-              'Підходящих страв в каталозі не знайдено. Можу запропонувати варіанти зі своїх знань.',
+              'Підходящих страв у каталозі не знайдено за цим контекстом. Можу запропонувати варіанти зі своїх знань.',
             dishes: [],
           });
         }
@@ -63,12 +77,12 @@ export const createRationTools = (medusaService: MedusaService) => {
     {
       name: 'search_menu_dishes',
       description:
-        'Search published dishes in the real Medusa product catalog by keyword, calorie range, or ingredient. Always call this first before building any meal plan.',
+        'Search published dishes in the real Medusa product catalog semantically using vector database by context, calorie range, or ingredients. Always call this first before building any meal plan.',
       schema: z.object({
         query: z
           .string()
           .describe(
-            'Keywords to search for, e.g. "курка протеїн", "салат", "кето", "сніданок"',
+            'Conversational query or keywords to search for, e.g. "низьковуглеводна вечеря", "щось кокосове", "високобілковий обід", "салат без томатів"',
           ),
         maxCalories: z
           .number()
@@ -87,8 +101,6 @@ export const createRationTools = (medusaService: MedusaService) => {
       if (!productIds?.length) {
         return 'Помилка: потрібен хоча б один ID продукту для створення раціону.';
       }
-
-      // TODO: persist to Medusa when ration bundle schema is ready
       return `Успішно. Раціон "${name}" (${totalCalories} ккал/день) збережено з ${productIds.length} стравами${description ? `: ${description}` : ''}. IDs: ${productIds.join(', ')}.`;
     },
     {

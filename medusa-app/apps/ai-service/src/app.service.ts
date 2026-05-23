@@ -11,6 +11,7 @@ import { ChatHistoryService } from './chat-history/chat-history.service';
 import { createCatalogTools } from './tools/catalog.tools';
 import { createAnalyticsTools } from './tools/analytics.tools';
 import { createRationTools } from './tools/ration.tools';
+import { EmbeddingService } from './embedding/embedding.service';
 
 const SYSTEM_PROMPT = `
 # ROLE
@@ -49,6 +50,7 @@ You are a certified nutritionist. When managers ask about meal plans, diets, or 
 
 # CRITICAL CONSTRAINTS
 You are strictly forbidden from generating xml tags like <tool_call> or raw JSON text blocks. If you decide to call a tool, do it natively via the environment plugin.
+- NEVER just describe or promise actions in text. If the user agrees, confirms, or asks you to perform an action (like creating a product, changing status, or saving bundles), you MUST call the corresponding tool. Telling the user you did something without an actual tool call invocation is strictly forbidden and considered a fatal error.
 
 # LANGUAGE
 - Reason internally in English.
@@ -64,6 +66,7 @@ export class AppService {
 
   constructor(
     private readonly supabaseService: SupabaseService,
+    private readonly embeddingService: EmbeddingService,
     private readonly medusaService: MedusaService,
     private readonly chatHistoryService: ChatHistoryService,
   ) {
@@ -85,7 +88,11 @@ export class AppService {
     return [
       ...createCatalogTools(this.supabaseService, this.medusaService),
       ...createAnalyticsTools(this.medusaService),
-      ...createRationTools(this.medusaService),
+      ...createRationTools(
+        this.supabaseService,
+        this.embeddingService,
+        this.medusaService,
+      ),
     ];
   }
 
@@ -107,6 +114,11 @@ export class AppService {
       this.logger.log(`Invoking model, iterations left: ${maxIterations}`);
       const response = await modelWithTools.invoke(history);
       history.push(response);
+
+      this.logger.log(`[AI Response Content]: ${response.content}`);
+      this.logger.log(
+        `[AI Generated Tool Calls]: ${JSON.stringify(response.tool_calls)}`,
+      );
 
       if (!response.tool_calls?.length) {
         finalResponse = response.content as string;

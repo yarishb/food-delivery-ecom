@@ -11,7 +11,8 @@ export const createCatalogTools = (
     async ({ productId, status }) => {
       try {
         await medusaService.updateProduct(productId, { status });
-        const label = status === 'published' ? 'опубліковано' : 'приховано (чернетка)';
+        const label =
+          status === 'published' ? 'опубліковано' : 'приховано (чернетка)';
         return `Успішно. Продукт ${productId} тепер ${label}.`;
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -32,7 +33,17 @@ export const createCatalogTools = (
   );
 
   const createCatalogProductTool = tool(
-    async ({ title, description, price, category, calories }) => {
+    async ({
+      title,
+      description,
+      price,
+      category,
+      calories,
+      handle,
+      protein,
+      fat,
+      carbs,
+    }) => {
       try {
         const product = await medusaService.createProduct({
           title,
@@ -40,6 +51,10 @@ export const createCatalogTools = (
           price,
           category,
           calories,
+          handle,
+          protein,
+          fat,
+          carbs,
         });
         return `Успішно. Страва "${product?.title}" створена в каталозі з реальним ID: ${product?.id}.`;
       } catch (err: unknown) {
@@ -50,15 +65,30 @@ export const createCatalogTools = (
     {
       name: 'create_catalog_product',
       description:
-        'Create a new dish in the Medusa.js catalog with nutrition fields.',
+        'Create a new dish in the Medusa.js catalog with complete nutrition and metadata fields.',
       schema: z.object({
         title: z.string().describe('The name of the dish'),
         description: z
           .string()
+          .optional()
           .describe('Marketing description with ingredients'),
         price: z.number().default(150).describe('Price in UAH'),
-        category: z.string().default('Загальне').describe('Category name'),
+        category: z
+          .string()
+          .default('Загальне')
+          .describe('Category name or diet type'),
         calories: z.number().default(300).describe('Total kilocalories'),
+        handle: z
+          .string()
+          .describe(
+            'URL-safe product handle (slug) built from title using lowercase latin characters and hyphens, e.g. "vegan-curry-chickpeas". Do not add slashes!',
+          ),
+        protein: z.number().default(15).describe('Estimated protein in grams'),
+        fat: z.number().default(10).describe('Estimated fat in grams'),
+        carbs: z
+          .number()
+          .default(35)
+          .describe('Estimated carbohydrates in grams'),
       }),
     },
   );
@@ -77,14 +107,12 @@ export const createCatalogTools = (
               (p: any) =>
                 p.categories?.some((c: any) =>
                   c.name.toLowerCase().includes(category.toLowerCase()),
-                ) ||
-                p.subtitle?.toLowerCase().includes(category.toLowerCase()),
+                ) || p.subtitle?.toLowerCase().includes(category.toLowerCase()),
             )
             .map((p: any) => p.id);
         }
 
-        const code =
-          discountCode || `DISC${discountPercent}_${Date.now()}`;
+        const code = discountCode || `DISC${discountPercent}_${Date.now()}`;
         await medusaService.createDiscount({
           code,
           percentage: discountPercent,
@@ -102,10 +130,7 @@ export const createCatalogTools = (
       description:
         'Create a percentage discount for a specific product or a whole category.',
       schema: z.object({
-        productId: z
-          .string()
-          .optional()
-          .describe('Specific Medusa product ID'),
+        productId: z.string().optional().describe('Specific Medusa product ID'),
         category: z
           .string()
           .optional()

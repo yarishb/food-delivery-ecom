@@ -92,28 +92,68 @@ export class MedusaService implements OnModuleInit {
 
   async createProduct(payload: {
     title: string;
-    description: string;
+    description?: string;
     price: number;
     category: string;
     calories: number;
+    handle?: string;
+    protein?: number;
+    fat?: number;
+    carbs?: number;
   }) {
     try {
+      console.log('Creating product with payload:', payload);
+      let safeHandle = payload.handle
+        ? payload.handle
+            .replace(/^\/+|\/+$/g, '')
+            .trim()
+            .toLowerCase()
+        : `product-${Date.now()}`;
+
+      console.log('Generated safe handle:', safeHandle);
+      if (!safeHandle || safeHandle === '-') {
+        safeHandle = `dish-${Date.now()}`;
+      }
+
+      const calorieValue = `${payload.calories} ккал`;
+
+      const shortCode = safeHandle
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '')
+        .substring(0, 6);
+      const generatedSku = `RAT-${shortCode}-${payload.calories}`;
+
       const response = await this.sdk?.admin.product.create({
         title: payload.title,
         description: payload.description,
-        subtitle: `Калорійність: ${payload.calories} ккал`,
-        options: [{ title: 'Default Option', values: ['Standard'] }],
+        handle: safeHandle,
+        status: 'published' as any,
+
+        metadata: {
+          meals: 3,
+          diet_type: payload.category,
+          tags: [payload.category.toLowerCase(), 'ai-generated'],
+        },
+
+        options: [{ title: 'Калорійність', values: [calorieValue] }],
         variants: [
           {
-            title: 'Standard',
-            // Medusa приймає ціни в мінімальних грошових одиницях (копійках/центах)
-            prices: [{ amount: payload.price * 100, currency_code: 'uah' }],
-            options: { 'Default Option': 'Standard' },
-            inventory_quantity: 10,
-            manage_inventory: true,
+            title: calorieValue,
+            sku: generatedSku,
+            options: { Калорійність: calorieValue },
+
+            metadata: {
+              protein: payload.protein ?? 0,
+              fat: payload.fat ?? 0,
+              carbs: payload.carbs ?? 0,
+            },
+
+            prices: [{ amount: payload.price, currency_code: 'uah' }],
+            manage_inventory: false,
           } as any,
         ],
       });
+
       return response?.product;
     } catch (err) {
       this.logger.error('createProduct failed via SDK', err);
