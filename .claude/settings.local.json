@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "PowerShell(Get-ChildItem \"c:\\\\Users\\\\yhboh\\\\Desktop\\\\diploma\\\\medusa-app\\\\apps\\\\backend\\\\src\" -Recurse -File | Where-Object { $_.Extension -in '.ts','.js' } | Select-Object -First 40 FullName | Format-Table -AutoSize)",
-      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\yhboh\\\\Desktop\\\\diploma\\\\medusa-app\\\\apps\\\\storefront\\\\src\" -Recurse -File | Where-Object { $_.Extension -in '.ts','.tsx' } | Select-Object -First 30 FullName | Format-Table -AutoSize)"
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\yhboh\\\\Desktop\\\\diploma\\\\medusa-app\\\\apps\\\\storefront\\\\src\" -Recurse -File | Where-Object { $_.Extension -in '.ts','.tsx' } | Select-Object -First 30 FullName | Format-Table -AutoSize)",
+      "Bash(git check-ignore *)"
     ]
   }
 }
